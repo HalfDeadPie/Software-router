@@ -14,6 +14,7 @@ using PcapDotNet.Packets;
 using System.Collections;
 using System.Timers;
 using PcapDotNet.Packets.IpV4;
+using PcapDotNet.Packets.Arp;
 
 namespace WindowsFormsApplication1
 {
@@ -26,8 +27,10 @@ namespace WindowsFormsApplication1
         private const int SNAPSHOT = 65536, TIMEOUT = 10, AMOUNT = 0, TIME = 1000, timeARP = 10;
         private MacAddress myMAC1;
         private Hashtable hashARP;
+        private String IP1;
         private List<MacAddress> listMAC;
         private System.Timers.Timer timerRefresh, timerARP;
+        private Boolean enableARP1;
         private Form opener;
 
         //*****************************************************************************************************************************************
@@ -47,6 +50,7 @@ namespace WindowsFormsApplication1
             allDevices = LivePacketDevice.AllLocalMachine;
             hashARP = new Hashtable();
             listMAC = new List<MacAddress>();
+            enableARP1 = false;
             open();
 
             timerRefresh = new System.Timers.Timer(TIME);
@@ -57,7 +61,7 @@ namespace WindowsFormsApplication1
             timerARP = new System.Timers.Timer(TIME);
             timerARP.AutoReset = true;
             this.timerARP.Start();
-            timerRefresh.Elapsed += periodARP;            
+            timerRefresh.Elapsed += periodARP;
         }
         //*****************************************************************************************************************************************
         //opening communicators
@@ -81,7 +85,7 @@ namespace WindowsFormsApplication1
 
         public void periodARP(Object source, ElapsedEventArgs e)
         {
-            for (int i = listMAC.Count - 1; i >= 0; i-- )
+            for (int i = listMAC.Count - 1; i >= 0; i--)
             {
                 logARP log = (logARP)hashARP[listMAC[i].GetHashCode()];
                 if (log.accessTTL > 1)
@@ -105,17 +109,18 @@ namespace WindowsFormsApplication1
         //packet handler for device 0
         public void PacketHandler0(Packet packet)
         {
-            addARPlog(packet);
+            if (enableARP1 == true)
+                addARPlog(packet);
         }
 
         //adding ARPlog to ARP GUI table
         private void addARPline(logARP log)
         {
 
-                ListViewItem lineARP = new ListViewItem(log.accessIP);//adding to GUI table
-                lineARP.SubItems.Add(log.accessMAC.ToString());
-                lineARP.SubItems.Add(log.accessTTL.ToString());
-                Invoke(new MethodInvoker(delegate() { tableARP.Items.Add(lineARP); }));            
+            ListViewItem lineARP = new ListViewItem(log.accessIP);//adding to GUI table
+            lineARP.SubItems.Add(log.accessMAC.ToString());
+            lineARP.SubItems.Add(log.accessTTL.ToString());
+            Invoke(new MethodInvoker(delegate() { tableARP.Items.Add(lineARP); }));
         }
 
         //adding ARP log
@@ -139,5 +144,37 @@ namespace WindowsFormsApplication1
                 actual.accessTTL = timeARP;
             }
         }
+
+        private void buttonStart1_Click(object sender, EventArgs e)
+        {
+            enableARP1 = true;
+            if (!textboxIP1.Equals(null))
+            {
+                IP1 = textboxIP1.Text.ToString();
+                MessageBox.Show(IP1.ToString());
+            }
+        }
+
+        private static void buttonReqARP1_Click(object sender, EventArgs e)
+        {
+            Packet packet = PacketBuilder.Build(
+            DateTime.Now,
+            new EthernetLayer
+            {
+                Source = new MacAddress("00:50:56:a5:64:4d"),
+                Destination = new MacAddress("00:50:56:9a:78:c7"),
+                EtherType = EthernetType.Arp
+            },
+            new ArpLayer
+            {
+                ProtocolType = EthernetType.IpV4,
+                Operation = ArpOperation.Request,
+                SenderHardwareAddress = new byte[] { 3, 3, 3, 3, 3, 3 }.AsReadOnly(), // 03:03:03:03:03:03.
+                SenderProtocolAddress = new byte[] { 1, 2, 3, 4 }.AsReadOnly(), // 1.2.3.4.
+                TargetHardwareAddress = new byte[] { 4, 4, 4, 4, 4, 4 }.AsReadOnly(), // 04:04:04:04:04:04.
+                TargetProtocolAddress = new byte[] { 11, 22, 33, 44 }.AsReadOnly(), // 11.22.33.44.
+            });
+        }
+
     }
 }
