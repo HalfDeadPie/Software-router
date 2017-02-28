@@ -35,6 +35,7 @@
             this.textboxIP1 = new System.Windows.Forms.TextBox();
             this.buttonStart1 = new System.Windows.Forms.Button();
             this.buttonReqARP1 = new System.Windows.Forms.Button();
+            this.textboxARPtarget = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // tableARP
@@ -95,11 +96,19 @@
             this.buttonReqARP1.UseVisualStyleBackColor = true;
             this.buttonReqARP1.Click += new System.EventHandler(this.buttonReqARP1_Click);
             // 
+            // textboxARPtarget
+            // 
+            this.textboxARPtarget.Location = new System.Drawing.Point(174, 551);
+            this.textboxARPtarget.Name = "textboxARPtarget";
+            this.textboxARPtarget.Size = new System.Drawing.Size(240, 20);
+            this.textboxARPtarget.TabIndex = 4;
+            // 
             // Form2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1209, 637);
+            this.Controls.Add(this.textboxARPtarget);
             this.Controls.Add(this.buttonReqARP1);
             this.Controls.Add(this.buttonStart1);
             this.Controls.Add(this.textboxIP1);
@@ -120,5 +129,6 @@
         private System.Windows.Forms.TextBox textboxIP1;
         private System.Windows.Forms.Button buttonStart1;
         private System.Windows.Forms.Button buttonReqARP1;
+        private System.Windows.Forms.TextBox textboxARPtarget;
     }
 }

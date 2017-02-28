@@ -16,9 +16,9 @@ namespace WindowsFormsApplication1
             get { return IP; }
             set { IP = value; }
         }
-        private MacAddress MAC;
+        private String MAC;
 
-        public MacAddress accessMAC
+        public String accessMAC
         {
             get { return MAC; }
             set { MAC = value; }
@@ -31,7 +31,7 @@ namespace WindowsFormsApplication1
             set { ttl = value; }
         }
 
-        public logARP(String IP, MacAddress MAC, int ttl)
+        public logARP(String IP, String MAC, int ttl)
         {
             this.IP = IP;
             this.MAC = MAC;

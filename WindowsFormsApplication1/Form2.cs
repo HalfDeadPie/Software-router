@@ -1,20 +1,26 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
+using PcapDotNet.Base;
 using PcapDotNet.Core;
-using System.Threading;
-using PcapDotNet.Packets.Ethernet;
 using PcapDotNet.Packets;
+using PcapDotNet.Packets.Arp;
+using PcapDotNet.Packets.Dns;
+using PcapDotNet.Packets.Ethernet;
+using PcapDotNet.Packets.Gre;
+using PcapDotNet.Packets.Http;
+using PcapDotNet.Packets.Icmp;
+using PcapDotNet.Packets.Igmp;
+using PcapDotNet.Packets.IpV4;
+using PcapDotNet.Packets.IpV6;
+using PcapDotNet.Packets.Transport;
+using System.Windows.Forms;
+using System.Threading;
 using System.Collections;
 using System.Timers;
-using PcapDotNet.Packets.IpV4;
-using PcapDotNet.Packets.Arp;
+using System.Net;
 
 namespace WindowsFormsApplication1
 {
@@ -28,7 +34,7 @@ namespace WindowsFormsApplication1
         private MacAddress myMAC1;
         private Hashtable hashARP;
         private String IP1;
-        private List<MacAddress> listMAC;
+        private List<String> listMAC;
         private System.Timers.Timer timerRefresh, timerARP;
         private Boolean enableARP1;
         private Form opener;
@@ -49,7 +55,7 @@ namespace WindowsFormsApplication1
             threadList = new List<Thread>();
             allDevices = LivePacketDevice.AllLocalMachine;
             hashARP = new Hashtable();
-            listMAC = new List<MacAddress>();
+            listMAC = new List<String>();
             enableARP1 = false;
             open();
 
@@ -62,6 +68,12 @@ namespace WindowsFormsApplication1
             timerARP.AutoReset = true;
             this.timerARP.Start();
             timerRefresh.Elapsed += periodARP;
+
+            myMAC1 = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]);
+
+            //temporary:
+            textboxIP1.Text = ("10.10.10.10");
+            textboxARPtarget.Text = ("169.254.252.215");
         }
         //*****************************************************************************************************************************************
         //opening communicators
@@ -77,7 +89,7 @@ namespace WindowsFormsApplication1
         public void Refresh(Object source, ElapsedEventArgs e)
         {
             Invoke(new MethodInvoker(delegate() { tableARP.Items.Clear(); }));
-            foreach (MacAddress actual in listMAC)
+            foreach (String actual in listMAC)
             {
                 addARPline((logARP)hashARP[actual.GetHashCode()]);
             }
@@ -110,7 +122,15 @@ namespace WindowsFormsApplication1
         public void PacketHandler0(Packet packet)
         {
             if (enableARP1 == true)
-                addARPlog(packet);
+            {
+                if (packet.DataLink.Kind == DataLinkKind.Ethernet)
+                {
+                    if (packet.Ethernet.EtherType == EthernetType.Arp)
+                    {
+                        addARPlog(packet);
+                    }
+                }
+            }
         }
 
         //adding ARPlog to ARP GUI table
@@ -126,54 +146,68 @@ namespace WindowsFormsApplication1
         //adding ARP log
         private void addARPlog(Packet packet)
         {
-
-            IpV4Datagram ip = packet.Ethernet.IpV4;
-
-
-            logARP log = new logARP(ip.Destination.ToString(), (MacAddress)packet.Ethernet.Source, timeARP);
-            int key = log.accessMAC.GetHashCode();
-            if (hashARP[key] == null)
+            if (packet.Ethernet.Arp.Operation.ToString().Equals("Reply"))
             {
-                addARPline(log);
-                hashARP.Add(key, log);
-                listMAC.Add(log.accessMAC);
-            }
-            else
-            {
-                logARP actual = (logARP)hashARP[key];
-                actual.accessTTL = timeARP;
+                byte[] senderMACbyte = packet.Ethernet.Arp.SenderHardwareAddress.ToArray();
+                String senderMAC = (BitConverter.ToString(senderMACbyte)).Replace("-", ":"); ;
+
+                byte[] senderIPbyte = packet.Ethernet.Arp.SenderProtocolAddress.ToArray();
+                String senderIP = "" + senderIPbyte[0] + "." + senderIPbyte[1] + "." + senderIPbyte[2] + "." + senderIPbyte[3];
+
+                logARP log = new logARP(senderIP,senderMAC,timeARP);
+                int key = log.accessMAC.GetHashCode();
+                if (hashARP[key] == null)
+                {
+                    addARPline(log);
+                    hashARP.Add(key, log);
+                    listMAC.Add(log.accessMAC);
+                }
+                else
+                {
+                    logARP actual = (logARP)hashARP[key];
+                    actual.accessTTL = timeARP;
+                }
             }
         }
 
+        //Enable device 0
         private void buttonStart1_Click(object sender, EventArgs e)
         {
             enableARP1 = true;
             if (!textboxIP1.Equals(null))
             {
                 IP1 = textboxIP1.Text.ToString();
-                MessageBox.Show(IP1.ToString());
             }
         }
 
-        private static void buttonReqARP1_Click(object sender, EventArgs e)
+        private void buttonReqARP1_Click(object sender, EventArgs e)
         {
+            String senderMAC = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]).ToString();
+            String senderIP = textboxIP1.Text.ToString();
+            String targetIP = textboxARPtarget.Text.ToString();
+
+            byte[] senderMACbyte = senderMAC.Split(':').Select(x => Convert.ToByte(x, 16)).ToArray();
+            byte[] senderIPbyte = senderIP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            byte[] targetIPbyte = targetIP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+
             Packet packet = PacketBuilder.Build(
             DateTime.Now,
             new EthernetLayer
             {
-                Source = new MacAddress("00:50:56:a5:64:4d"),
-                Destination = new MacAddress("00:50:56:9a:78:c7"),
+                Source = new MacAddress(senderMAC),
+                Destination = new MacAddress("FF:FF:FF:FF:FF:FF"),
                 EtherType = EthernetType.Arp
             },
             new ArpLayer
             {
                 ProtocolType = EthernetType.IpV4,
                 Operation = ArpOperation.Request,
-                SenderHardwareAddress = new byte[] { 3, 3, 3, 3, 3, 3 }.AsReadOnly(), // 03:03:03:03:03:03.
-                SenderProtocolAddress = new byte[] { 1, 2, 3, 4 }.AsReadOnly(), // 1.2.3.4.
-                TargetHardwareAddress = new byte[] { 4, 4, 4, 4, 4, 4 }.AsReadOnly(), // 04:04:04:04:04:04.
-                TargetProtocolAddress = new byte[] { 11, 22, 33, 44 }.AsReadOnly(), // 11.22.33.44.
+                SenderHardwareAddress = senderMACbyte.AsReadOnly(),
+                SenderProtocolAddress = senderIPbyte.AsReadOnly(),
+                TargetHardwareAddress = new byte[] { 0, 0, 0, 0, 0, 0 }.AsReadOnly(),
+                TargetProtocolAddress = targetIPbyte.AsReadOnly(),
             });
+            dev0.SendPacket(packet);
         }
 
     }

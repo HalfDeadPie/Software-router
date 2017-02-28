@@ -26,7 +26,7 @@ namespace WindowsFormsApplication1
             }
 
             // Print the list
-            for (int i = 0; i != allDevices.Count; i++)
+            for (int i = 0; i < allDevices.Count; i++)
             {
                 LivePacketDevice device = allDevices[i];
                 listInterfaces1.Items.Add(new ListViewItem(device.Description.ToString()));
