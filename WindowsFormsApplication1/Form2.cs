@@ -146,6 +146,7 @@ namespace WindowsFormsApplication1
         //adding ARP log
         private void addARPlog(Packet packet)
         {
+            //reply ARP incomming
             if (packet.Ethernet.Arp.Operation.ToString().Equals("Reply"))
             {
                 byte[] senderMACbyte = packet.Ethernet.Arp.SenderHardwareAddress.ToArray();
@@ -166,6 +167,55 @@ namespace WindowsFormsApplication1
                 {
                     logARP actual = (logARP)hashARP[key];
                     actual.accessTTL = timeARP;
+                }
+            }
+            else if (packet.Ethernet.Arp.Operation.ToString().Equals("Request"))
+            {
+                String targetMAC = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]).ToString();
+                String targetIP = textboxIP1.Text.ToString();
+                
+                byte[] senderMACbyte = packet.Ethernet.Arp.SenderHardwareAddress.ToArray();
+                byte[] senderIPbyte = packet.Ethernet.Arp.SenderProtocolAddress.ToArray();
+                byte[] targetMACbyte = targetMAC.Split(':').Select(x => Convert.ToByte(x, 16)).ToArray();
+                byte[] targetIPbyte = targetIP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+
+                String senderMAC = (BitConverter.ToString(senderMACbyte)).Replace("-", ":"); ;
+                String senderIP = "" + senderIPbyte[0] + "." + senderIPbyte[1] + "." + senderIPbyte[2] + "." + senderIPbyte[3];
+
+                logARP log = new logARP(senderIP, senderMAC, timeARP);
+                int key = log.accessMAC.GetHashCode();
+                if (hashARP[key] == null)
+                {
+                    addARPline(log);
+                    hashARP.Add(key, log);
+                    listMAC.Add(log.accessMAC);
+                }
+                else
+                {
+                    logARP actual = (logARP)hashARP[key];
+                    actual.accessTTL = timeARP;
+                }
+
+                if (textboxIP1.Equals(targetIP))
+                {
+                    Packet replyPacket = PacketBuilder.Build(
+                    DateTime.Now,
+                    new EthernetLayer
+                    {
+                        Source = new MacAddress(targetMAC),
+                        Destination = new MacAddress(senderMAC),
+                        EtherType = EthernetType.Arp
+                    },
+                    new ArpLayer
+                    {
+                        ProtocolType = EthernetType.IpV4,
+                        Operation = ArpOperation.Reply,
+                        SenderHardwareAddress = targetMACbyte.AsReadOnly(),
+                        SenderProtocolAddress = targetIPbyte.AsReadOnly(),
+                        TargetHardwareAddress = senderMACbyte.AsReadOnly(),
+                        TargetProtocolAddress = senderIPbyte.AsReadOnly(),
+                    });
+                    dev0.SendPacket(packet);
                 }
             }
         }
