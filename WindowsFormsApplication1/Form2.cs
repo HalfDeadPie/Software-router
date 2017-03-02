@@ -196,7 +196,9 @@ namespace WindowsFormsApplication1
                     actual.accessTTL = timeARP;
                 }
 
-                if (textboxIP1.Equals(targetIP))
+                byte[] tempIPbyte = packet.Ethernet.Arp.TargetProtocolAddress.ToArray();
+                String tempIP = "" + tempIPbyte[0] + "." + tempIPbyte[1] + "." + tempIPbyte[2] + "." + tempIPbyte[3];
+                if (textboxIP1.Text.Equals(tempIP.ToString()))
                 {
                     Packet replyPacket = PacketBuilder.Build(
                     DateTime.Now,
@@ -215,7 +217,7 @@ namespace WindowsFormsApplication1
                         TargetHardwareAddress = senderMACbyte.AsReadOnly(),
                         TargetProtocolAddress = senderIPbyte.AsReadOnly(),
                     });
-                    dev0.SendPacket(packet);
+                    dev0.SendPacket(replyPacket);
                 }
             }
         }
