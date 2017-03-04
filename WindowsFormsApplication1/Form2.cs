@@ -161,6 +161,8 @@ namespace WindowsFormsApplication1
             else
             {
                 logARP actual = (logARP)hashARP[key];
+                actual.accessIP = senderIP;
+                actual.accessMAC = senderMAC;
                 actual.accessTTL = timeARP;
             }
 
