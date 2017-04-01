@@ -30,7 +30,8 @@ namespace WindowsFormsApplication1
         private IList<LivePacketDevice> allDevices;
         private PacketCommunicator dev0;
         private List<Thread> threadList;//all threads list
-        private const int SNAPSHOT = 65536, TIMEOUT = 10, AMOUNT = 0, TIME = 1000, timeARP = 10;
+        private List<Rt> routeList;
+        private const int SNAPSHOT = 65536, TIMEOUT = 10, AMOUNT = 0, TIME = 1000, timeARP = 30;
         private MacAddress myMAC1;
         private Hashtable hashARP;
         private List<String> listMAC;
@@ -53,6 +54,7 @@ namespace WindowsFormsApplication1
             InitializeComponent();
             Show();
             threadList = new List<Thread>();
+            routeList = new List<Rt>();
             allDevices = LivePacketDevice.AllLocalMachine;
             hashARP = new Hashtable();
             listMAC = new List<String>();
@@ -70,10 +72,6 @@ namespace WindowsFormsApplication1
             timerRefresh.Elapsed += periodARP;
 
             myMAC1 = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]);
-
-            //temporary:
-            textboxIP1.Text = ("10.10.10.10");
-            textboxARPtarget.Text = ("169.254.252.215");
         }
         //*****************************************************************************************************************************************
         //opening communicators
@@ -145,6 +143,8 @@ namespace WindowsFormsApplication1
         //adding ARP log
         private void handlerARP(Packet packet)
         {
+            MessageBox.Show(myMAC1.ToString()+"\n"+packet.Ethernet.Source.ToString());
+
             byte[] senderMACbyte = packet.Ethernet.Arp.SenderHardwareAddress.ToArray();
             String senderMAC = (BitConverter.ToString(senderMACbyte)).Replace("-", ":");
             byte[] senderIPbyte = packet.Ethernet.Arp.SenderProtocolAddress.ToArray();
@@ -166,21 +166,17 @@ namespace WindowsFormsApplication1
                 actual.accessTTL = timeARP;
             }
 
-           
-            if (packet.Ethernet.Arp.Operation.ToString().Equals("Reply"))
-            {
+            String targetMAC = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]).ToString();
+            byte[] targetMACbyte = targetMAC.Split(':').Select(x => Convert.ToByte(x, 16)).ToArray();
+            String targetIP = textboxIP1.Text.ToString();
+            byte[] targetIPbyte = targetIP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+    
+            byte[] tempIPbyte = packet.Ethernet.Arp.TargetProtocolAddress.ToArray();
+            String tempIP = "" + tempIPbyte[0] + "." + tempIPbyte[1] + "." + tempIPbyte[2] + "." + tempIPbyte[3];
 
-            }
-            else if (packet.Ethernet.Arp.Operation.ToString().Equals("Request"))
+            if (textboxIP1.Text.Equals(tempIP.ToString()))
             {
-                String targetMAC = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]).ToString();
-                byte[] targetMACbyte = targetMAC.Split(':').Select(x => Convert.ToByte(x, 16)).ToArray();
-                String targetIP = textboxIP1.Text.ToString();
-                byte[] targetIPbyte = targetIP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
-
-                byte[] tempIPbyte = packet.Ethernet.Arp.TargetProtocolAddress.ToArray();
-                String tempIP = "" + tempIPbyte[0] + "." + tempIPbyte[1] + "." + tempIPbyte[2] + "." + tempIPbyte[3];
-                if (textboxIP1.Text.Equals(tempIP.ToString()))
+                if (packet.Ethernet.Arp.Operation.ToString().Equals("Request"))
                 {
                     Packet replyPacket = PacketBuilder.Build(
                     DateTime.Now,
@@ -249,5 +245,15 @@ namespace WindowsFormsApplication1
             dev0.SendPacket(packet);
         }
 
+        private void buttonStatic_Click(object sender, EventArgs e)
+        {
+            Form3 formStatic = new Form3(tableRoutes,routeList);
+            formStatic.Show();
+        }
+
+        private void tableRoutes_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
