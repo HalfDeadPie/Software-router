@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace WindowsFormsApplication1
 {
-    class logARP
+    public class logARP
     {
         private String IP;
 
