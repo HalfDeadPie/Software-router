@@ -54,6 +54,7 @@
             this.ipAddress,
             this.macAddress,
             this.ttl});
+            this.tableARP.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.tableARP.ForeColor = System.Drawing.SystemColors.Window;
             this.tableARP.FullRowSelect = true;
             this.tableARP.Location = new System.Drawing.Point(64, 43);
@@ -131,6 +132,7 @@
             this.rtMask,
             this.rtInterface,
             this.rtNexthop});
+            this.tableRoutes.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.tableRoutes.ForeColor = System.Drawing.SystemColors.Window;
             this.tableRoutes.FullRowSelect = true;
             this.tableRoutes.Location = new System.Drawing.Point(479, 43);
@@ -161,7 +163,7 @@
             // 
             this.rtInterface.Text = "Interface";
             this.rtInterface.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.rtInterface.Width = 55;
+            this.rtInterface.Width = 70;
             // 
             // rtNexthop
             // 
@@ -198,7 +200,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.SystemColors.ButtonHighlight;
+            this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.ClientSize = new System.Drawing.Size(1209, 637);
             this.Controls.Add(this.buttonEnable1);
             this.Controls.Add(this.buttonStatic);

@@ -131,7 +131,7 @@ namespace WindowsFormsApplication1
         //packet handler for device 0
         public void PacketHandler0(Packet packet)
         {
-            while (enableARP1 == true)
+            if (enableARP1 == true)
             {
                 if (packet.DataLink.Kind == DataLinkKind.Ethernet)
                 {

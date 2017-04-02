@@ -80,7 +80,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ARP.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="RIPv2.cs" />
     <Compile Include="Start.cs">
