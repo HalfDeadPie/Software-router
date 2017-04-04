@@ -81,6 +81,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GUI.cs" />
+    <Compile Include="Ping.cs" />
     <Compile Include="RIPv2.cs" />
     <Compile Include="Start.cs">
       <SubType>Form</SubType>

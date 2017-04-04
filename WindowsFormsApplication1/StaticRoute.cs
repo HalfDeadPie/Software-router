@@ -30,6 +30,7 @@ namespace WindowsFormsApplication1
             stat.Nexthop = textboxStaticNexthop.Text;
             stat.Device = (uint)numericDevice.Value;
             stat.Type = 'S';
+            stat.Distance = 5;
             r.Add(stat);
 
             gui.addRouteLine(stat);

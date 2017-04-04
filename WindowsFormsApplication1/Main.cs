@@ -40,12 +40,12 @@ namespace WindowsFormsApplication1
         private Hashtable hashARP;
         private List<String> listMAC;
         private System.Timers.Timer timerRefresh, timerARP;
-        private Boolean enableARP1;
-        private Boolean enabled1;
+        private Boolean enableARP1, enableRIP1;
         private Form opener;
 
         public GUI gui;
         private RIPv2 rip;
+        private Ping ping;
 
         //*****************************************************************************************************************************************
         //Constructor
@@ -67,7 +67,7 @@ namespace WindowsFormsApplication1
             hashARP = new Hashtable();
             listMAC = new List<String>();
             enableARP1 = false;
-            enabled1 = false;
+            enableRIP1 = false;
 
             timerRefresh = new System.Timers.Timer(TIME);
             timerRefresh.AutoReset = true;
@@ -83,6 +83,12 @@ namespace WindowsFormsApplication1
 
             gui = new GUI(this, tableRoutes);
             rip = new RIPv2(gui,routeList);
+            ping = new Ping();
+
+            //testing
+            textboxIP1.Text = "169.254.212.220";
+            textboxMask1.Text = "255.255.0.0";
+            textboxARPtarget.Text = "169.254.212.209";
             
         }
         //*****************************************************************************************************************************************
@@ -131,25 +137,45 @@ namespace WindowsFormsApplication1
         //packet handler for device 0
         public void PacketHandler0(Packet packet)
         {
-            if (enableARP1 == true)
+            if (packet.IsValid)
             {
-                if (packet.DataLink.Kind == DataLinkKind.Ethernet)
-                {
-                    if (packet.Ethernet.EtherType == EthernetType.Arp)
-                    {
-                        handlerARP(packet);
-                    }
+                //-------------------------MY IP OR MULTICAST
+               if (enableARP1 == true)
+               {
+
+                        if (packet.DataLink.Kind == DataLinkKind.Ethernet)
+                        {
+                            //ARP PACKET
+                            if (packet.Ethernet.EtherType == EthernetType.Arp)
+                            {
+                                handlerARP(packet);
+                            }
+                            //IPV4 PACKET
+                            else if (packet.Ethernet.EtherType == EthernetType.IpV4)
+                            {
+                                //enabled RIPv2
+                                if (enableRIP1 == true)
+                                {
+                                    //receiving RIPv2 packet with special destination IP
+                                    if (packet.Ethernet.IpV4.Destination.ToString().Equals("224.0.0.9"))
+                                    {
+                                        rip.handler(packet);
+                                    }
+                                }
+                                //ICMP
+                                if (packet.Ethernet.IpV4.Protocol == IpV4Protocol.InternetControlMessageProtocol)
+                                {
+                                    ping.handler(packet, dev0);
+                                }
+                            }
+                        }
+                    
                 }
-            }
-            if (enabled1 == true)
-            {
-                //receiving RIPv2 packet
-                if (packet.Ethernet.IpV4.Destination.ToString().Equals("224.0.0.9"))
+                //-------------------------ANOTHER IP
+                else
                 {
-                    rip.handler(packet);
                 }
-            }
-                
+            }     
         }
 
         //adding ARPlog to ARP GUI table
@@ -224,17 +250,27 @@ namespace WindowsFormsApplication1
         {
             if (enableARP1 == false)
             {
-                enableARP1 = true;
+                addConnected(textboxIP1.Text, textboxMask1.Text, 0);
                 Invoke(new MethodInvoker(delegate() { buttonStart1.Text = "Stop"; }));
+                Invoke(new MethodInvoker(delegate() { textboxIP1.Enabled = false; }));
+                Invoke(new MethodInvoker(delegate() { textboxMask1.Enabled = false; }));
+                enableARP1 = true;
             }
             else
             { 
                 enableARP1 = false;
                 Invoke(new MethodInvoker(delegate() { buttonStart1.Text = "Start"; }));
+                Invoke(new MethodInvoker(delegate() { textboxIP1.Enabled = true; }));
+                Invoke(new MethodInvoker(delegate() { textboxMask1.Enabled = true; }));
             }
         }
 
         private void buttonReqARP1_Click(object sender, EventArgs e)
+        {
+            requestARP();
+        }
+
+        private void requestARP()
         {
             String senderMAC = PcapDotNet.Core.Extensions.LivePacketDeviceExtensions.GetMacAddress(allDevices[DEV0]).ToString();
             String senderIP = textboxIP1.Text.ToString();
@@ -272,16 +308,152 @@ namespace WindowsFormsApplication1
 
         private void buttonEnable1_Click(object sender, EventArgs e)
         {
-            if (enabled1 == false)
+            if (enableRIP1 == false)
             {
                 Invoke(new MethodInvoker(delegate() { buttonEnable1.Text = "Stop"; }));
-                enabled1 = true;
+                enableRIP1 = true;
             }
             else
             {
                 Invoke(new MethodInvoker(delegate() { buttonEnable1.Text = "Start"; }));
-                enabled1 = false;
+                enableRIP1 = false;
             }
         }
+
+        private void Main_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(Environment.ExitCode);
+        }
+
+        private void buttonPing_Click(object sender, EventArgs e)
+        {
+            Thread thread = new Thread(() => pinger());
+            thread.Start();
+        }
+
+        private void pinger()
+        {
+            Route route = findNexthopRoute(textboxARPtarget.Text);
+
+            logARP log = null;
+            if (route.Nexthop.Equals("directly connected"))
+            {
+                log = lookupARP(textboxARPtarget.Text);
+            }
+            else
+            {
+                log = lookupARP(route.Nexthop);
+            }
+
+            if (log == null)
+            {
+                requestARP();
+            }
+
+            Thread.Sleep(10);
+
+            if (route.Nexthop.Equals("directly connected"))
+            {
+                log = lookupARP(textboxARPtarget.Text);
+            }
+            else
+            {
+                log = lookupARP(route.Nexthop);
+            }
+
+
+
+            try
+            {
+                ping.Request(dev0, myMAC1.ToString(), log.accessMAC, textboxIP1.Text, log.accessIP);
+            }
+            catch (Exception delay)
+            {
+            }
+        }
+
+        private Route findNexthopRoute(String IP)
+        {
+            Route best = new Route();
+            best.Mask = "0.0.0.0";
+            best.Distance = 999;
+            foreach (Route actual in routeList)
+            {
+                if(isInSubnet(IP, actual.Prefix, actual.Mask) && actual.Distance < best.Distance &&  betterMask(best.Mask,actual.Mask)){
+                    best = actual;
+                }
+            }
+            if (best.Distance != 999)
+            {
+                return best;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        //Function: Return true if IP is in Prefix's subnet
+        private bool isInSubnet(String IP, String prefix, String mask)
+        {
+            byte[] byteIP = IP.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            byte[] bytePrefix = prefix.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            byte[] byteMask = mask.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            byte[] byteMaskedIP = new byte[byteIP.Length];
+            byte[] byteMaskedPrefix = new byte[bytePrefix.Length];
+
+            if (byteIP.Length != byteMask.Length)
+                throw new ArgumentException("Lengths of IP address and subnet mask do not match.");
+
+            for (int i = 0; i < byteIP.Length; i++)
+            {
+                byteMaskedIP[i] = (byte)(byteIP[i] & byteMask[i]);
+                byteMaskedPrefix[i] = (byte)(bytePrefix[i] & byteMask[i]);
+            }
+            if (byteMaskedPrefix[0] == byteMaskedIP[0] && byteMaskedPrefix[1] == byteMaskedIP[1] &&  byteMaskedPrefix[2] == byteMaskedIP[2] && byteMaskedPrefix[3] == byteMaskedIP[3]) 
+                return true;
+            else return false;
+        }
+
+        //Function: Return true if mask is higher then mask of the actual best route
+        private bool betterMask(String bestMask, String actualMask)
+        {
+            byte[] byteBestMask = bestMask.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            byte[] byteActualMask = actualMask.Split('.').Select(x => Convert.ToByte(x, 10)).ToArray();
+            for (int i = 0; i < byteActualMask.Length; i++)
+            {
+                if (byteActualMask[i] > byteBestMask[i])
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        //Function: Return the ARP log of current destination mathich nexthop
+        private logARP lookupARP(String nexthop){
+            foreach (String actual in listMAC)
+            {
+                logARP log = (logARP)hashARP[actual.GetHashCode()];
+                if (log.accessIP.Equals(nexthop))
+                {
+                    return log;
+                }
+            }
+            return null;
+        }
+
+        private void addConnected(String IP, String mask, uint device)
+        {
+            Route connected = new Route();
+            connected.Prefix = IP;
+            connected.Mask = mask;
+            connected.Nexthop = "directly connected";
+            connected.Distance = 0;
+            connected.Type = 'C';
+            lock (routeList) { routeList.Add(connected); };
+            gui.addRouteLine(connected);
+        }
+
     }
 }

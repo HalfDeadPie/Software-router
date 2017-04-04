@@ -50,5 +50,21 @@ namespace WindowsFormsApplication1
             get { return device; }
             set { device = value; }
         }
+
+        String metric;
+
+        public String Metric
+        {
+            get { return metric; }
+            set { metric = value; }
+        }
+
+        uint distance;
+
+        public uint Distance
+        {
+            get { return distance; }
+            set { distance = value; }
+        }
     }
 }

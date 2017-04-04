@@ -60,9 +60,11 @@ namespace WindowsFormsApplication1
                     stat.Nexthop = next;
                     stat.Device = 0;
                     stat.Type = 'R';
+                    stat.Metric = metric;
+                    stat.Distance = 120;
                     routes.Add(stat);
 
-                    gui.addRouteLine(stat);
+                    //gui.addRouteLine(stat);
 
                     i++;
                 }

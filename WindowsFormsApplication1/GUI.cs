@@ -11,12 +11,15 @@ namespace WindowsFormsApplication1
     {
         Form mainform;
         ListView tableRoutes;
+
+        //Constructor
         public GUI(Form form, ListView rt)
         {
             mainform = form;
             tableRoutes = rt;
         }
 
+        //Function: Add the line to routing table
         public void addRouteLine(Route line)
         {
             ListViewItem item = new ListViewItem(line.Type.ToString());
@@ -24,7 +27,8 @@ namespace WindowsFormsApplication1
             item.SubItems.Add(line.Mask);
             item.SubItems.Add(line.Device.ToString());
             item.SubItems.Add("via " + line.Nexthop);
-            mainform.Invoke(new MethodInvoker(delegate() { tableRoutes.Items.Add(item); }));
+            item.SubItems.Add(line.Metric);
+            lock (tableRoutes){ mainform.Invoke(new MethodInvoker(delegate() { tableRoutes.Items.Add(item); }));}
         }
     }
 }

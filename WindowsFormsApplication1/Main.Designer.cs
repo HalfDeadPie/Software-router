@@ -13,7 +13,7 @@
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
-            //if (disposing && (components != null))
+            if (disposing && (components != null))
             {
                 components.Dispose();
             }
@@ -45,6 +45,9 @@
             this.rtNexthop = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.buttonStatic = new System.Windows.Forms.Button();
             this.buttonEnable1 = new System.Windows.Forms.Button();
+            this.buttonPing = new System.Windows.Forms.Button();
+            this.rtMetric = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.textboxMask1 = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
             // tableARP
@@ -86,7 +89,7 @@
             this.textboxIP1.ForeColor = System.Drawing.SystemColors.Window;
             this.textboxIP1.Location = new System.Drawing.Point(64, 17);
             this.textboxIP1.Name = "textboxIP1";
-            this.textboxIP1.Size = new System.Drawing.Size(267, 20);
+            this.textboxIP1.Size = new System.Drawing.Size(117, 20);
             this.textboxIP1.TabIndex = 1;
             // 
             // buttonStart1
@@ -105,7 +108,7 @@
             // 
             this.buttonReqARP1.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.buttonReqARP1.ForeColor = System.Drawing.SystemColors.ButtonHighlight;
-            this.buttonReqARP1.Location = new System.Drawing.Point(64, 551);
+            this.buttonReqARP1.Location = new System.Drawing.Point(64, 572);
             this.buttonReqARP1.Name = "buttonReqARP1";
             this.buttonReqARP1.Size = new System.Drawing.Size(103, 23);
             this.buttonReqARP1.TabIndex = 3;
@@ -117,9 +120,9 @@
             // 
             this.textboxARPtarget.BackColor = System.Drawing.SystemColors.MenuText;
             this.textboxARPtarget.ForeColor = System.Drawing.SystemColors.Window;
-            this.textboxARPtarget.Location = new System.Drawing.Point(174, 551);
+            this.textboxARPtarget.Location = new System.Drawing.Point(64, 551);
             this.textboxARPtarget.Name = "textboxARPtarget";
-            this.textboxARPtarget.Size = new System.Drawing.Size(240, 20);
+            this.textboxARPtarget.Size = new System.Drawing.Size(350, 20);
             this.textboxARPtarget.TabIndex = 4;
             // 
             // tableRoutes
@@ -131,13 +134,14 @@
             this.rtPrefix,
             this.rtMask,
             this.rtInterface,
-            this.rtNexthop});
+            this.rtNexthop,
+            this.rtMetric});
             this.tableRoutes.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.tableRoutes.ForeColor = System.Drawing.SystemColors.Window;
             this.tableRoutes.FullRowSelect = true;
             this.tableRoutes.Location = new System.Drawing.Point(479, 43);
             this.tableRoutes.Name = "tableRoutes";
-            this.tableRoutes.Size = new System.Drawing.Size(437, 508);
+            this.tableRoutes.Size = new System.Drawing.Size(542, 508);
             this.tableRoutes.TabIndex = 5;
             this.tableRoutes.UseCompatibleStateImageBehavior = false;
             this.tableRoutes.View = System.Windows.Forms.View.Details;
@@ -169,7 +173,7 @@
             // 
             this.rtNexthop.Text = "Nexthop";
             this.rtNexthop.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.rtNexthop.Width = 110;
+            this.rtNexthop.Width = 150;
             // 
             // buttonStatic
             // 
@@ -196,12 +200,40 @@
             this.buttonEnable1.UseVisualStyleBackColor = false;
             this.buttonEnable1.Click += new System.EventHandler(this.buttonEnable1_Click);
             // 
+            // buttonPing
+            // 
+            this.buttonPing.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.buttonPing.ForeColor = System.Drawing.SystemColors.ControlLightLight;
+            this.buttonPing.Location = new System.Drawing.Point(173, 572);
+            this.buttonPing.Name = "buttonPing";
+            this.buttonPing.Size = new System.Drawing.Size(100, 23);
+            this.buttonPing.TabIndex = 8;
+            this.buttonPing.Text = "Ping";
+            this.buttonPing.UseVisualStyleBackColor = false;
+            this.buttonPing.Click += new System.EventHandler(this.buttonPing_Click);
+            // 
+            // rtMetric
+            // 
+            this.rtMetric.Text = "Metric";
+            this.rtMetric.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            // 
+            // textboxMask1
+            // 
+            this.textboxMask1.BackColor = System.Drawing.SystemColors.MenuText;
+            this.textboxMask1.ForeColor = System.Drawing.SystemColors.Window;
+            this.textboxMask1.Location = new System.Drawing.Point(187, 17);
+            this.textboxMask1.Name = "textboxMask1";
+            this.textboxMask1.Size = new System.Drawing.Size(121, 20);
+            this.textboxMask1.TabIndex = 9;
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.ClientSize = new System.Drawing.Size(1209, 637);
+            this.Controls.Add(this.textboxMask1);
+            this.Controls.Add(this.buttonPing);
             this.Controls.Add(this.buttonEnable1);
             this.Controls.Add(this.buttonStatic);
             this.Controls.Add(this.tableRoutes);
@@ -212,6 +244,7 @@
             this.Controls.Add(this.tableARP);
             this.Name = "Main";
             this.Text = "Software Router";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Main_FormClosed);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -235,5 +268,8 @@
         private System.Windows.Forms.ColumnHeader rtMask;
         private System.Windows.Forms.ColumnHeader rtInterface;
         private System.Windows.Forms.Button buttonEnable1;
+        private System.Windows.Forms.Button buttonPing;
+        private System.Windows.Forms.ColumnHeader rtMetric;
+        private System.Windows.Forms.TextBox textboxMask1;
     }
 }
